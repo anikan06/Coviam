@@ -1,16 +1,28 @@
-/*
-$(function(){
-    $.getJSON('https://swapi.co/api/people/', function(data) {
-        console.log(data);
-    });
-});*/
+
 var apiLoadURL = 'https://swapi.co/api/';
-var saleLoadURL = apiLoadURL + 'people';
+var saleLoadURL = apiLoadURL + 'people/';
 // 'https://swapi.co/api/people';
-var filmLoadURL = '';
+var filmLoadURL = apiLoadURL + 'films/{id}';
 var allSales = [];
 
 fetchSales();
+
+
+function loadFilm(filmUrl) {
+    return new Promise(function(resolve, reject) {
+        $.ajax({
+            url: filmUrl,
+            success: function (data) {
+                resolve(data);
+            },
+            error: function (error) {
+                reject(error);
+            },
+            dataType: 'json',
+            type: 'GET'
+        });
+    });
+}
 
 function fetchSales(url) {
     var initial = !url;
@@ -44,7 +56,22 @@ function handleSalesLoad(data, initial) {
     }
 
     allSales = allSales.concat(data.results);
-
+    allSales.forEach(function(person) {
+        person.loadedFilms = [];
+        person.films.forEach(function(filmUrl) {
+            loadFilm(filmUrl).then(function(film) {
+                person.loadedFilms.push(film);
+                if(person.loadedFilms.length === person.films.length) {
+                    person.movieList = person.loadedFilms.map(function(f) {
+                        return f.title;
+                    }).join(', ');
+                    console.log(person.name, person.movieList);
+                    var cd = document.getElementById('filmsApp');
+                    cd.innerHTML += person.movieList;
+                }
+            });
+        });
+    });
 
     for (i = 0; i < data.results.length; i++) {
         var sale = data.results[i];
@@ -67,8 +94,8 @@ function handleSalesLoad(data, initial) {
             "                        <div class=\"backside\">\n" +
             "                            <div class=\"card\">\n" +
             "                                <div class=\"card-body text-center mt-4\">\n" +
-            "                                    <h4 class=\"card-title\">Sunlimetech</h4>\n" +
-            "                                    <p class=\"card-text\">" + sale.films + "</p>\n" +
+            "                                    <h4 class=\"card-title\">Films</h4>\n" +
+            "                                    <p class=\"card-text\" id=\"filmsApp\"></p>\n" +
             "                                    <ul class=\"list-inline\">\n" +
             "                                        <li class=\"list-inline-item\">\n" +
             "                                            <a class=\"social-icon text-xs-center\" target=\"_blank\" href=\"#\">\n" +
@@ -104,3 +131,11 @@ function handleSalesLoad(data, initial) {
     }
 
 }
+
+
+/*
+$(function(){
+    $.getJSON('https://swapi.co/api/people/', function(data) {
+        console.log(data);
+    });
+});*/
